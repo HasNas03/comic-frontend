@@ -336,6 +336,11 @@ function AddComicView({ onCancel, onCreated, onRateNewComic }) {
         onPrimary={() => onRateNewComic(createdComic.comicId)}
         secondaryLabel="Back Home"
         onSecondary={onCancel}
+        tertiaryLabel="Add another comic"
+        onTertiary={() => {
+          // reset created state so the form is shown again for a new comic
+          setCreatedComic(null);
+        }}
       />
     );
   }
@@ -689,7 +694,7 @@ function EmptyState({ title, text, actionLabel, onAction }) {
   );
 }
 
-function SuccessPanel({ title, text, primaryLabel, onPrimary, secondaryLabel, onSecondary }) {
+function SuccessPanel({ title, text, primaryLabel, onPrimary, secondaryLabel, onSecondary, tertiaryLabel, onTertiary }) {
   return (
     <section className="success-panel">
       <div className="success-icon">
@@ -700,6 +705,9 @@ function SuccessPanel({ title, text, primaryLabel, onPrimary, secondaryLabel, on
       <div className="button-row centered">
         <button className="primary-button" onClick={onPrimary}>{primaryLabel}</button>
         <button className="secondary-button" onClick={onSecondary}>{secondaryLabel}</button>
+        {tertiaryLabel && onTertiary && (
+          <button className="secondary-button" onClick={onTertiary}>{tertiaryLabel}</button>
+        )}
       </div>
     </section>
   );

@@ -82,7 +82,6 @@ export default function App() {
       <main className="main-panel">
         <header className="topbar">
           <div>
-            <p className="eyebrow">Comic Catalog</p>
             <h1>Your Library</h1>
           </div>
           <button className="icon-button" onClick={loadCatalog} title="Refresh catalog">
@@ -170,7 +169,7 @@ function Sidebar({ activeView, onNavigate }) {
         <BookOpen size={28} />
         <div>
           <strong>Comic Catalog</strong>
-          <span>Personal runs</span>
+          <span>Track all your comics!</span>
         </div>
       </div>
 
@@ -189,7 +188,7 @@ function Sidebar({ activeView, onNavigate }) {
         </button>
       </nav>
 
-      <a className="github-link" href="https://github.com/" target="_blank" rel="noreferrer">
+      <a className="github-link" href="https://github.com/HasNas03/" target="_blank" rel="noreferrer">
         <Github size={18} />
         GitHub
       </a>
@@ -210,15 +209,15 @@ function LibraryView({ catalog, loading, onAddComic, onAddRating, onManageRating
   return (
     <section className="content-stack">
       <div className="summary-grid">
-        <SummaryTile label="Comics" value={catalog.length} />
-        <SummaryTile label="Rated" value={ratedCount} />
-        <SummaryTile label="Average" value={average} />
+        <SummaryTile label="Comics" value={catalog.length} variant="comics" icon={<BookOpen size={26} />} />
+        <SummaryTile label="Rated" value={ratedCount} variant="rated" icon={<Star size={26} />} />
+        <SummaryTile label="Average Rating" value={average} variant="average" icon={<Check size={26} />} />
       </div>
 
       {catalog.length === 0 ? (
         <EmptyState
           title="No comics yet"
-          text="Add your first comic run to start building the catalog."
+          text="Add your first comic to start building the catalog."
           actionLabel="Add Comic"
           onAction={onAddComic}
         />
@@ -239,11 +238,14 @@ function LibraryView({ catalog, loading, onAddComic, onAddRating, onManageRating
   );
 }
 
-function SummaryTile({ label, value }) {
+function SummaryTile({ label, value, variant, icon }) {
   return (
-    <div className="summary-tile">
-      <span>{label}</span>
-      <strong>{value}</strong>
+    <div className={`summary-tile ${variant || ""}`}>
+      <div className="summary-icon">{icon}</div>
+      <div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </div>
     </div>
   );
 }

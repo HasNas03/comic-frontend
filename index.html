@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Keep browser UI and initial background dark to avoid white flash on refresh -->
+    <meta name="theme-color" content="#080713" />
+    <style>
+      /* Minimal inline styles to prevent white flash before CSS loads */
+      html,body { background: #080713; }
+      #root { min-height:100vh; }
+    </style>
     <title>Comic Catalog</title>
   </head>
   <body>

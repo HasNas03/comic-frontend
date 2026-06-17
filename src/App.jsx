@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   BookOpen,
@@ -252,14 +252,16 @@ function SummaryTile({ label, value, variant, icon }) {
 
 function CatalogCard({ item, onDeleteComic, onManageRating, onAddRating }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef(null);
   const hasRating = item.ratingScore != null;
+  useCloseOnOutsideClick(ref, open, setOpen);
 
   return (
-    <article className="catalog-card">
+    <article className="catalog-card" ref={ref}>
       <div className="card-main">
         <div>
           <h2>{item.comicTitle}</h2>
-          <p className="muted">{item.comicIssue} · {item.comicStartYear}</p>
+          <p className="muted">Issue Number: <span className="kv">{item.comicIssue || "—"}</span> · Start Year: <span className="kv">{item.comicStartYear || "—"}</span></p>
           <p className="comic-id">ID {item.comicId}</p>
         </div>
         <RatingStars value={item.ratingScore || 0} readOnly />
@@ -302,6 +304,21 @@ function CatalogCard({ item, onDeleteComic, onManageRating, onAddRating }) {
       </div>
     </article>
   );
+}
+
+// close menu when clicking outside any open CatalogCard
+function useCloseOnOutsideClick(ref, open, setOpen) {
+  useEffect(() => {
+    function onDoc(e) {
+      if (!open) return;
+      if (!ref.current) return;
+      if (!ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [ref, open, setOpen]);
 }
 
 function AddComicView({ onCancel, onCreated, onRateNewComic }) {

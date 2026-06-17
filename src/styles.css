@@ -133,6 +133,8 @@ button { cursor: pointer; }
   border-radius: 14px;
   text-decoration: none;
   font-size: 1.5rem;
+  transition: transform 220ms cubic-bezier(.2,.8,.2,1), background 180ms ease, box-shadow 180ms ease, border-color 180ms ease, color 180ms ease;
+  will-change: transform, background, box-shadow;
 }
 
 .nav-list button svg,
@@ -147,6 +149,8 @@ button { cursor: pointer; }
 
 .nav-list button:nth-child(2) svg { background: linear-gradient(135deg, #6dc5ff, #0a4bd6); }
 .nav-list button:nth-child(3) svg { background: linear-gradient(135deg, #4ade80, #15803d); color: #ffffff; }
+
+
 
 /* Make each button hover/active background match its icon background */
 .nav-list button:nth-child(1):hover,
@@ -184,6 +188,23 @@ button { cursor: pointer; }
 }
 
 .github-link { margin-top: 0; order: 4; }
+
+/* Make GitHub link icon pink */
+.github-link svg {
+  background: linear-gradient(135deg, #ff7ab6, #ff4d95);
+  filter: drop-shadow(0 0 8px rgba(255, 77, 149, 0.24));
+}
+.github-link:hover svg {
+  transform: translateX(4px) scale(1.02);
+}
+
+/* Make the whole GitHub link hover in pink to match the icon */
+.github-link:hover {
+  transform: translateX(2px);
+  background: linear-gradient(135deg, rgba(255, 0, 102, 0.645), rgba(255, 45, 129, 0.402));
+  border-color: rgba(255, 0, 102, 0.645);
+  box-shadow: 0 12px 30px rgba(255,77,149,0.12);
+}
 
 .main-panel {
   min-width: 0;
@@ -367,8 +388,8 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
 .menu-popover button:hover { background: rgba(37, 99, 235, 0.16); }
 .menu-popover .danger { color: #fb7185; }
 
-.stars { min-width: 246px; display: flex; align-items: center; gap: 2px; color: rgba(250, 204, 21, 0.24); }
-.stars .filled { color: var(--yellow); filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.35)); }
+.stars { min-width: 246px; display: flex; align-items: center; gap: 5px; color: rgb(202, 236, 255); }
+.stars .filled { color: var(--yellow); }
 .interactive-stars { position: relative; width: fit-content; display: flex; align-items: center; gap: 12px; color: var(--yellow); }
 .star-buttons { position: absolute; inset: 0 auto 0 0; width: 246px; display: grid; grid-template-columns: repeat(10, 1fr); }
 .star-buttons button { background: transparent; border: 0; padding: 0; }

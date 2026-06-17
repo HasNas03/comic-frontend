@@ -36,18 +36,3 @@ http://localhost:8081
 npm run build
 npm run preview
 ```
-
-## Docker
-
-```bash
-docker build -t comic-frontend:latest .
-docker run --rm -p 3000:80 comic-frontend:latest
-```
-
-The included nginx config proxies `/api` to a Docker network service named:
-
-```text
-comic-catalog-service
-```
-
-If your Docker Compose catalog service has a different name, update `nginx.conf`.

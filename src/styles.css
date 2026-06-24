@@ -194,10 +194,6 @@ button { cursor: pointer; }
   background: linear-gradient(135deg, #ff7ab6, #ff4d95);
   filter: drop-shadow(0 0 8px rgba(255, 77, 149, 0.24));
 }
-.github-link:hover svg {
-  transform: translateX(4px) scale(1.02);
-}
-
 /* Make the whole GitHub link hover in pink to match the icon */
 .github-link:hover {
   transform: translateX(2px);
@@ -398,6 +394,7 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
 .success-panel,
 .empty-state { max-width: 760px; padding: 26px; }
 .form-panel.wide { max-width: 980px; }
+.form-panel.add-comic { max-width: 680px; /* slightly narrower so there's extra space on the right */ }
 .form-grid { display: grid; gap: 16px; }
 
 .text-field { display: grid; gap: 7px; }

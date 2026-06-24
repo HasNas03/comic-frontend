@@ -217,7 +217,7 @@ function LibraryView({ catalog, loading, onAddComic, onAddRating, onManageRating
       {catalog.length === 0 ? (
         <EmptyState
           title="No comics yet"
-          text="Add your first comic to start building the catalog."
+          text="Add your first comic to start building your collection."
           actionLabel="Add Comic"
           onAction={onAddComic}
         />
@@ -261,8 +261,8 @@ function CatalogCard({ item, onDeleteComic, onManageRating, onAddRating }) {
       <div className="card-main">
         <div>
           <h2>{item.comicTitle}</h2>
-          <p className="muted">Issue Number: <span className="kv">{item.comicIssue || "—"}</span> · Start Year: <span className="kv">{item.comicStartYear || "—"}</span></p>
-          <p className="comic-id">ID {item.comicId}</p>
+          <p className="muted">Issue #<span className="kv">{item.comicIssue || "—"}</span> · <span className="kv">{item.comicStartYear || "—"}</span></p>
+          <p className="comic-id">Comic ID: {item.comicId}</p>
         </div>
         <RatingStars value={item.ratingScore || 0} readOnly />
       </div>
@@ -363,7 +363,7 @@ function AddComicView({ onCancel, onCreated, onRateNewComic }) {
   }
 
   return (
-    <section className="form-panel">
+    <section className="form-panel add-comic">
       <div className="section-heading">
         <p className="eyebrow">New comic</p>
         <h2>Add a Comic</h2>
@@ -379,7 +379,7 @@ function AddComicView({ onCancel, onCreated, onRateNewComic }) {
           required
         />
         <TextField
-          label="Publisher / Issue"
+          label="Issue Number"
           value={form.comicIssue}
           onChange={(comicIssue) => setForm({ ...form, comicIssue })}
           required
@@ -468,7 +468,7 @@ function AddRatingView({ catalog, prefilledComicId, onCancel, onCreated, onManag
             <option value="">Choose a comic</option>
             {catalog.map((item) => (
               <option key={item.comicId} value={item.comicId}>
-                {item.comicTitle} | {item.comicIssue}
+                {item.comicTitle} | #{item.comicIssue}
               </option>
             ))}
           </select>

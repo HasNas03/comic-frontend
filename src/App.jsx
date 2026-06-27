@@ -6,7 +6,6 @@ import {
   ChevronDown,
   Github,
   Home,
-  Image,
   Library,
   MoreVertical,
   Pencil,
@@ -39,6 +38,7 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [ratingModalItem, setRatingModalItem] = useState(null);
   const [prefilledComicId, setPrefilledComicId] = useState("");
+  const [editingComic, setEditingComic] = useState(null);
   const [imageVersion, setImageVersion] = useState(Date.now());
 
   async function loadCatalog() {
@@ -62,6 +62,7 @@ export default function App() {
   function goToLibrary(message = "") {
     setView("library");
     setPrefilledComicId("");
+    setEditingComic(null);
     setNotice(message);
     setImageVersion(Date.now());
     loadCatalog();
@@ -79,6 +80,7 @@ export default function App() {
         activeView={view}
         onNavigate={(nextView) => {
           setView(nextView);
+          setEditingComic(null);
           setNotice("");
         }}
       />
@@ -120,11 +122,15 @@ export default function App() {
             onAddComic={() => setView("addComic")}
             onAddRating={goToAddRating}
             onManageRating={setRatingModalItem}
+            onEditComic={(item) => {
+              setEditingComic(item);
+              setView("editComic");
+              setNotice("");
+            }}
             onDeleteComic={async (item) => {
               await catalogApi.deleteComic(item.comicId);
               goToLibrary(`${item.comicTitle} was deleted.`);
             }}
-            onImageChanged={(message) => goToLibrary(message)}
             imageVersion={imageVersion}
           />
         )}
@@ -139,6 +145,15 @@ export default function App() {
               loadCatalog();
             }}
             onRateNewComic={(comicId) => goToAddRating(comicId)}
+          />
+        )}
+
+        {view === "editComic" && editingComic && (
+          <EditComicView
+            item={editingComic}
+            imageVersion={imageVersion}
+            onCancel={() => goToLibrary()}
+            onSaved={(comic) => goToLibrary(`${comic.comicTitle} was updated.`)}
           />
         )}
 
@@ -203,7 +218,7 @@ function Sidebar({ activeView, onNavigate }) {
   );
 }
 
-function LibraryView({ catalog, loading, onAddComic, onAddRating, onManageRating, onDeleteComic, onImageChanged, imageVersion }) {
+function LibraryView({ catalog, loading, onAddComic, onAddRating, onManageRating, onEditComic, onDeleteComic, imageVersion }) {
   const ratedCount = catalog.filter((item) => item.ratingScore != null).length;
   const average = ratedCount
     ? (catalog.reduce((sum, item) => sum + (item.ratingScore || 0), 0) / ratedCount).toFixed(1)
@@ -236,8 +251,8 @@ function LibraryView({ catalog, loading, onAddComic, onAddRating, onManageRating
               item={item}
               onDeleteComic={onDeleteComic}
               onManageRating={onManageRating}
+              onEditComic={onEditComic}
               onAddRating={onAddRating}
-              onImageChanged={onImageChanged}
               imageVersion={imageVersion}
             />
           ))}
@@ -259,12 +274,11 @@ function SummaryTile({ label, value, variant, icon }) {
   );
 }
 
-function CatalogCard({ item, onDeleteComic, onManageRating, onAddRating, onImageChanged, imageVersion }) {
+function CatalogCard({ item, onDeleteComic, onManageRating, onEditComic, onAddRating, imageVersion }) {
   const [open, setOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const ref = useRef(null);
-  const imageInputRef = useRef(null);
   const [imageError, setImageError] = useState(false);
-  const [imageSaving, setImageSaving] = useState(false);
   const hasRating = item.ratingScore != null;
   const hasCoverImage = Boolean(item.comicImagePath) && !imageError;
   useCloseOnOutsideClick(ref, open, setOpen);
@@ -272,48 +286,6 @@ function CatalogCard({ item, onDeleteComic, onManageRating, onAddRating, onImage
   useEffect(() => {
     setImageError(false);
   }, [item.comicId, item.comicImagePath, imageVersion]);
-
-  async function handleImageSelected(event) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-
-    if (!file) {
-      return;
-    }
-
-    setImageSaving(true);
-
-    try {
-      await catalogApi.updateComicImage(item.comicId, file);
-      setImageError(false);
-      onImageChanged(`Cover image updated for ${item.comicTitle}.`);
-    } catch (err) {
-      window.alert(readableError(err));
-    } finally {
-      setImageSaving(false);
-      setOpen(false);
-    }
-  }
-
-  async function handleDeleteImage() {
-    const confirmed = window.confirm(`Remove cover image for ${item.comicTitle}?`);
-    if (!confirmed) {
-      return;
-    }
-
-    setImageSaving(true);
-
-    try {
-      await catalogApi.deleteComicImage(item.comicId);
-      setImageError(true);
-      onImageChanged(`Cover image removed for ${item.comicTitle}.`);
-    } catch (err) {
-      window.alert(readableError(err));
-    } finally {
-      setImageSaving(false);
-      setOpen(false);
-    }
-  }
 
   return (
     <article className="catalog-card" ref={ref}>
@@ -344,46 +316,26 @@ function CatalogCard({ item, onDeleteComic, onManageRating, onAddRating, onImage
       {item.ratingReview && <p className="review">"{item.ratingReview}"</p>}
 
       <div className="card-menu">
-        <input
-          ref={imageInputRef}
-          className="hidden-file-input"
-          type="file"
-          accept="image/*"
-          onChange={handleImageSelected}
-        />
         <button className="icon-button" onClick={() => setOpen((current) => !current)} title="Comic actions">
           <MoreVertical size={20} />
         </button>
 
         {open && (
           <div className="menu-popover">
-            <button onClick={() => onManageRating(item)}>
+            <button onClick={() => onEditComic(item)}>
               <Pencil size={16} />
-              {hasRating ? "Manage Rating" : "Add Rating"}
+              Edit Comic
             </button>
-            {!hasRating && (
-              <button onClick={() => onAddRating(item.comicId)}>
-                <Star size={16} />
-                Rate From Page
-              </button>
-            )}
-            <button onClick={() => imageInputRef.current?.click()} disabled={imageSaving}>
-              <Upload size={16} />
-              {imageSaving ? "Uploading..." : "Modify Cover"}
+            <button onClick={() => onManageRating(item)}>
+              <Star size={16} />
+              {hasRating ? "Manage Rating" : "Quick Rate"}
             </button>
-            {!imageError && (
-              <button onClick={handleDeleteImage} disabled={imageSaving}>
-                <Image size={16} />
-                Remove Cover
-              </button>
-            )}
+  
             <button
               className="danger"
               onClick={() => {
-                const confirmed = window.confirm(`Delete ${item.comicTitle}? This also deletes its rating.`);
-                if (confirmed) {
-                  onDeleteComic(item);
-                }
+                setOpen(false);
+                setConfirmDeleteOpen(true);
               }}
             >
               <Trash2 size={16} />
@@ -392,6 +344,19 @@ function CatalogCard({ item, onDeleteComic, onManageRating, onAddRating, onImage
           </div>
         )}
       </div>
+
+      {confirmDeleteOpen && (
+        <ConfirmDialog
+          title="Delete Comic"
+          message={`Delete ${item.comicTitle}? This is permanent.`}
+          confirmLabel="Delete Comic"
+          onCancel={() => setConfirmDeleteOpen(false)}
+          onConfirm={() => {
+            setConfirmDeleteOpen(false);
+            onDeleteComic(item);
+          }}
+        />
+      )}
     </article>
   );
 }
@@ -412,12 +377,109 @@ function useCloseOnOutsideClick(ref, open, setOpen) {
 }
 
 function AddComicView({ onCancel, onCreated, onRateNewComic }) {
-  const [form, setForm] = useState(emptyComic);
+  const [createdComic, setCreatedComic] = useState(null);
+
+  async function createComic(form, coverImage) {
+    const created = await catalogApi.addComic(form);
+    if (coverImage) {
+      await catalogApi.addComicImage(created.comicId, coverImage);
+    }
+    setCreatedComic(created);
+    onCreated(created);
+    return created;
+  }
+
+  if (createdComic) {
+    return (
+      <SuccessPanel
+        title={`${createdComic.comicTitle} was added`}
+        text="The comic is in your library."
+        primaryLabel="Rate This Comic"
+        onPrimary={() => onRateNewComic(createdComic.comicId)}
+        secondaryLabel="Back Home"
+        onSecondary={onCancel}
+        tertiaryLabel="Add another comic"
+        onTertiary={() => setCreatedComic(null)}
+      />
+    );
+  }
+
+  return (
+    <ComicFormView
+      eyebrow="New comic"
+      title="Add a Comic"
+      submitLabel="Save Comic"
+      initialForm={emptyComic}
+      coverTitle="Upload Cover"
+      coverActionText="Click or drag to upload cover image"
+      onCancel={onCancel}
+      onSubmit={createComic}
+    />
+  );
+}
+
+function EditComicView({ item, imageVersion, onCancel, onSaved }) {
+  const initialForm = {
+    comicTitle: item.comicTitle || "",
+    comicIssue: item.comicIssue || "",
+    comicStartYear: item.comicStartYear || "",
+    comicDesc: item.comicDesc || ""
+  };
+
+  async function updateComic(form, coverImage, removeExistingCover) {
+    const updated = await catalogApi.updateComic(item.comicId, form);
+
+    if (removeExistingCover) {
+      await catalogApi.deleteComicImage(item.comicId);
+    }
+
+    if (coverImage) {
+      await catalogApi.updateComicImage(item.comicId, coverImage);
+    }
+
+    onSaved(updated);
+    return updated;
+  }
+
+  return (
+    <ComicFormView
+      eyebrow="Update comic"
+      title="Edit Comic"
+      submitLabel="Update Comic"
+      initialForm={initialForm}
+      existingImageUrl={item.comicImagePath ? catalogApi.imageUrl(item.comicId, imageVersion) : ""}
+      coverTitle="Edit Cover"
+      coverActionText="Click or drag to replace cover image"
+      onCancel={onCancel}
+      onSubmit={updateComic}
+    />
+  );
+}
+
+function ComicFormView({
+  eyebrow,
+  title,
+  submitLabel,
+  initialForm,
+  existingImageUrl = "",
+  coverTitle,
+  coverActionText,
+  onCancel,
+  onSubmit
+}) {
+  const [form, setForm] = useState(initialForm);
   const [coverImage, setCoverImage] = useState(null);
   const [coverPreview, setCoverPreview] = useState("");
-  const [createdComic, setCreatedComic] = useState(null);
+  const [removeExistingCover, setRemoveExistingCover] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setForm(initialForm);
+    setCoverImage(null);
+    setCoverPreview("");
+    setRemoveExistingCover(false);
+  }, [initialForm.comicTitle, initialForm.comicIssue, initialForm.comicStartYear, initialForm.comicDesc]);
 
   useEffect(() => {
     if (!coverImage) {
@@ -436,14 +498,7 @@ function AddComicView({ onCancel, onCreated, onRateNewComic }) {
     setError("");
 
     try {
-      const created = await catalogApi.addComic(form);
-      if (coverImage) {
-        await catalogApi.addComicImage(created.comicId, coverImage);
-      }
-      setCreatedComic(created);
-      setForm(emptyComic);
-      setCoverImage(null);
-      onCreated(created);
+      await onSubmit(form, coverImage, removeExistingCover);
     } catch (err) {
       setError(readableError(err));
     } finally {
@@ -451,30 +506,19 @@ function AddComicView({ onCancel, onCreated, onRateNewComic }) {
     }
   }
 
-  if (createdComic) {
-    return (
-      <SuccessPanel
-        title={`${createdComic.comicTitle} was added`}
-        text="The comic is in your library."
-        primaryLabel="Rate This Comic"
-        onPrimary={() => onRateNewComic(createdComic.comicId)}
-        secondaryLabel="Back Home"
-        onSecondary={onCancel}
-        tertiaryLabel="Add another comic"
-        onTertiary={() => {
-          // reset created state so the form is shown again for a new comic
-          setCreatedComic(null);
-        }}
-      />
-    );
+  function handleCoverChange(file) {
+    setCoverImage(file);
+    if (file) {
+      setRemoveExistingCover(false);
+    }
   }
 
   return (
     <section className="add-comic-layout">
       <div className="form-panel add-comic">
         <div className="section-heading">
-          <p className="eyebrow">New comic</p>
-          <h2>Add a Comic</h2>
+          <p className="eyebrow">{eyebrow}</p>
+          <h2>{title}</h2>
         </div>
 
         {error && <InlineError message={error} />}
@@ -506,7 +550,7 @@ function AddComicView({ onCancel, onCreated, onRateNewComic }) {
 
           <div className="button-row">
             <button className="primary-button" disabled={saving}>
-              {saving ? "Saving..." : "Save Comic"}
+              {saving ? "Saving..." : submitLabel}
             </button>
             <button type="button" className="secondary-button" onClick={onCancel}>
               Cancel
@@ -516,18 +560,26 @@ function AddComicView({ onCancel, onCreated, onRateNewComic }) {
       </div>
 
       <CoverUploadCard
+        title={coverTitle}
+        actionText={coverActionText}
         coverImage={coverImage}
         coverPreview={coverPreview}
-        onChange={setCoverImage}
+        existingImageUrl={removeExistingCover ? "" : existingImageUrl}
+        onChange={handleCoverChange}
         onClear={() => setCoverImage(null)}
+        onRemoveExisting={existingImageUrl ? () => {
+          setCoverImage(null);
+          setRemoveExistingCover(true);
+        } : null}
       />
     </section>
   );
 }
 
-function CoverUploadCard({ coverImage, coverPreview, onChange, onClear }) {
+function CoverUploadCard({ title, actionText, coverImage, coverPreview, existingImageUrl, onChange, onClear, onRemoveExisting }) {
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
+  const shownImage = coverPreview || existingImageUrl;
 
   function handleDroppedFile(event) {
     event.preventDefault();
@@ -544,7 +596,7 @@ function CoverUploadCard({ coverImage, coverPreview, onChange, onClear }) {
     <aside className="cover-upload-card">
       <div>
         <p className="eyebrow">Cover image</p>
-        <h2>Upload Cover</h2>
+        <h2>{title}</h2>
       </div>
 
       <button
@@ -562,12 +614,12 @@ function CoverUploadCard({ coverImage, coverPreview, onChange, onClear }) {
         onDragLeave={() => setDragging(false)}
         onDrop={handleDroppedFile}
       >
-        {coverPreview ? (
-          <img src={coverPreview} alt="Selected comic cover preview" />
+        {shownImage ? (
+          <img src={shownImage} alt="Selected comic cover preview" />
         ) : (
           <span>
             <Upload size={32} />
-            <strong>Click or drag to upload cover image</strong>
+            <strong>{actionText}</strong>
             <small>PNG, JPG, or JPEG</small>
           </span>
         )}
@@ -583,11 +635,16 @@ function CoverUploadCard({ coverImage, coverPreview, onChange, onClear }) {
 
       <div className="cover-actions">
         <button type="button" className="secondary-button" onClick={() => inputRef.current?.click()}>
-          {coverImage ? "Change Image" : "Choose Image"}
+          {shownImage ? "Change Cover Image" : "Choose Image"}
         </button>
         {coverImage && (
           <button type="button" className="danger-button" onClick={onClear}>
-            Remove
+            Remove Selected
+          </button>
+        )}
+        {!coverImage && existingImageUrl && onRemoveExisting && (
+          <button type="button" className="danger-button" onClick={onRemoveExisting}>
+            Remove Cover Image
           </button>
         )}
       </div>
@@ -710,6 +767,7 @@ function RatingModal({ item, onClose, onSaved }) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   async function saveRating() {
     if (rating.ratingScore === 0) {
@@ -739,11 +797,6 @@ function RatingModal({ item, onClose, onSaved }) {
   }
 
   async function deleteRating() {
-    const confirmed = window.confirm(`Delete rating for ${item.comicTitle}?`);
-    if (!confirmed) {
-      return;
-    }
-
     setSaving(true);
     setError("");
 
@@ -788,12 +841,50 @@ function RatingModal({ item, onClose, onSaved }) {
             {saving ? "Saving..." : hasRating ? "Update Rating" : "Add Rating"}
           </button>
           {hasRating && (
-            <button className="danger-button" onClick={deleteRating} disabled={saving}>
+            <button className="danger-button" onClick={() => setConfirmDeleteOpen(true)} disabled={saving}>
               Delete Rating
             </button>
           )}
           <button className="secondary-button" onClick={onClose}>
             Cancel
+          </button>
+        </div>
+      </div>
+
+      {confirmDeleteOpen && (
+        <ConfirmDialog
+          title="Delete Rating"
+          message={`Do you want to delete your rating for ${item.comicTitle}? This action is permanent.`}
+          confirmLabel="Delete Rating"
+          onCancel={() => setConfirmDeleteOpen(false)}
+          onConfirm={() => {
+            setConfirmDeleteOpen(false);
+            deleteRating();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ConfirmDialog({ title, message, confirmLabel, onCancel, onConfirm }) {
+  return (
+    <div className="confirm-backdrop" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div className="confirm-card">
+        <div className="confirm-icon">
+          <AlertTriangle size={24} />
+        </div>
+        <div>
+          <p className="eyebrow">Confirm action</p>
+          <h2 id="confirm-title">{title}</h2>
+          <p>{message}</p>
+        </div>
+        <div className="button-row confirm-actions">
+          <button type="button" className="secondary-button" onClick={onCancel}>
+            Cancel
+          </button>
+          <button type="button" className="danger-button" onClick={onConfirm}>
+            {confirmLabel}
           </button>
         </div>
       </div>

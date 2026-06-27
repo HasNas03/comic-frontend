@@ -333,7 +333,8 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
   grid-template-areas:
     "cover main"
     "cover description"
-    "cover review";
+    "cover review"
+    "cover actions";
   column-gap: 22px;
   row-gap: 10px;
   border-left: 6px solid #3b82f6;
@@ -384,7 +385,55 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
 .selected-comic p { color: var(--muted); font-size: 14px; }
 .comic-id { margin-bottom: 0; overflow-wrap: anywhere; }
 .description { grid-area: description; margin: 0; color: #dbeafe; }
-.review { grid-area: review; margin: 0; color: #93c5fd; font-style: italic; }
+.review {
+  grid-area: review;
+  position: relative;
+  margin: 0;
+  color: #93c5fd;
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.review.collapsed {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.review.collapsed {
+  mask-image: linear-gradient(180deg, #000 62%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 62%, transparent 100%);
+}
+
+.review.expanded {
+  overflow-wrap: anywhere;
+}
+
+.review-toggle {
+  grid-area: actions;
+  justify-self: start;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  color: #bfdbfe;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.review-toggle:hover {
+  background: rgba(37, 99, 235, 0.16);
+  border-color: var(--border-strong);
+}
+
+.review-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg) scale(var(--svg-scale));
+}
 .catalog-card:has(.menu-popover) { z-index: 10; }
 .card-menu { position: absolute; top: 16px; right: 16px; z-index: 20; }
 
@@ -427,7 +476,19 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
 .menu-popover .danger { color: #fb7185; }
 
 .stars { min-width: 246px; display: flex; align-items: center; gap: 5px; color: rgb(202, 236, 255); }
+.star-shell { position: relative; width: 22px; height: 22px; display: inline-grid; place-items: center; }
 .stars .filled { color: var(--yellow); }
+.star-score {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #406fad;
+  font-size: 13px;
+  font-weight: 1000;
+  line-height: 1;
+  pointer-events: none;
+}
 .interactive-stars { position: relative; width: fit-content; display: flex; align-items: center; gap: 12px; color: var(--yellow); }
 .star-buttons { position: absolute; inset: 0 auto 0 0; width: 246px; display: grid; grid-template-columns: repeat(10, 1fr); }
 .star-buttons button { background: transparent; border: 0; padding: 0; }
@@ -546,12 +607,40 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
 .text-field textarea { resize: vertical; }
 
 .rating-layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 20px; }
+.rating-selector-column { display: grid; align-content: start; gap: 18px; }
 .select-field { position: relative; align-self: start; display: grid; gap: 7px; }
 .select-field select { appearance: none; padding-right: 40px; }
 .select-field svg { position: absolute; right: 12px; bottom: 13px; pointer-events: none; color: #60a5fa; }
 .rating-form-area { display: grid; align-content: start; gap: 18px; min-height: 250px; padding: 18px; }
 .selected-comic h3 { margin-bottom: 5px; }
 .selected-comic p { margin-bottom: 0; overflow-wrap: anywhere; }
+.selected-cover-preview {
+  width: min(240px, 100%);
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(7, 7, 18, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.selected-cover-preview img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.selected-cover-preview .cover-placeholder {
+  gap: 10px;
+  text-align: center;
+}
+
+.selected-cover-preview .cover-placeholder span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
 
 .button-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .button-row.full-width { grid-column: 1 / -1; }
@@ -565,6 +654,10 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
   border-radius: 12px;
   border: 1px solid transparent;
   font-weight: 900;
+}
+.primary-button {
+  width: 240px;
+  border-color: #b9cade;
 }
 .primary-button {
   background: linear-gradient(135deg, #38bdf8, #2563eb);
@@ -669,7 +762,8 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
       "cover"
       "main"
       "description"
-      "review";
+      "review"
+      "actions";
   }
   .cover-thumb {
     width: 100%;

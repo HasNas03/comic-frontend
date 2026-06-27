@@ -191,7 +191,7 @@ function Sidebar({ activeView, onNavigate }) {
         <BookOpen size={28} />
         <div>
           <strong>Comic Catalog</strong>
-          <span>Track all your comics!</span>
+          <span>Track all your books!</span>
         </div>
       </div>
 
@@ -277,7 +277,10 @@ function SummaryTile({ label, value, variant, icon }) {
 function CatalogCard({ item, onDeleteComic, onManageRating, onEditComic, onAddRating, imageVersion }) {
   const [open, setOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [reviewExpanded, setReviewExpanded] = useState(false);
+  const [reviewCanExpand, setReviewCanExpand] = useState(false);
   const ref = useRef(null);
+  const reviewRef = useRef(null);
   const [imageError, setImageError] = useState(false);
   const hasRating = item.ratingScore != null;
   const hasCoverImage = Boolean(item.comicImagePath) && !imageError;
@@ -286,6 +289,28 @@ function CatalogCard({ item, onDeleteComic, onManageRating, onEditComic, onAddRa
   useEffect(() => {
     setImageError(false);
   }, [item.comicId, item.comicImagePath, imageVersion]);
+
+  useEffect(() => {
+    setReviewExpanded(false);
+  }, [item.comicId, item.ratingReview]);
+
+  useEffect(() => {
+    const review = reviewRef.current;
+    if (!review) {
+      setReviewCanExpand(false);
+      return;
+    }
+
+    const wasExpanded = review.classList.contains("expanded");
+    review.classList.remove("expanded");
+    review.classList.add("collapsed");
+    setReviewCanExpand(review.scrollHeight > review.clientHeight + 1);
+
+    if (wasExpanded) {
+      review.classList.remove("collapsed");
+      review.classList.add("expanded");
+    }
+  }, [item.ratingReview]);
 
   return (
     <article className="catalog-card" ref={ref}>
@@ -313,7 +338,23 @@ function CatalogCard({ item, onDeleteComic, onManageRating, onEditComic, onAddRa
       </div>
 
       {item.comicDesc && <p className="description">{item.comicDesc}</p>}
-      {item.ratingReview && <p className="review">"{item.ratingReview}"</p>}
+      {item.ratingReview && (
+        <p ref={reviewRef} className={`review ${reviewExpanded ? "expanded" : "collapsed"}`}>
+          "{item.ratingReview}"
+        </p>
+      )}
+
+      {reviewCanExpand && (
+        <button
+          type="button"
+          className="review-toggle"
+          onClick={() => setReviewExpanded((current) => !current)}
+          aria-expanded={reviewExpanded}
+        >
+          <ChevronDown size={16} />
+          {reviewExpanded ? "Show less" : "Show more"}
+        </button>
+      )}
 
       <div className="card-menu">
         <button className="icon-button" onClick={() => setOpen((current) => !current)} title="Comic actions">
@@ -657,12 +698,19 @@ function AddRatingView({ catalog, prefilledComicId, onCancel, onCreated, onManag
   const [rating, setRating] = useState(emptyRating);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [selectedImageError, setSelectedImageError] = useState(false);
 
   const selectedComic = useMemo(
     () => catalog.find((item) => item.comicId === selectedComicId),
     [catalog, selectedComicId]
   );
   const alreadyRated = selectedComic?.ratingId != null;
+  const selectedComicHasCover = Boolean(selectedComic?.comicImagePath) && !selectedImageError;
+
+  
+  useEffect(() => {
+    setSelectedImageError(false);
+  }, [selectedComicId, selectedComic?.comicImagePath]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -705,25 +753,44 @@ function AddRatingView({ catalog, prefilledComicId, onCancel, onCreated, onManag
       {error && <InlineError message={error} />}
 
       <form onSubmit={handleSubmit} className="rating-layout">
-        <label className="select-field">
-          <span>Comic</span>
-          <select value={selectedComicId} onChange={(event) => setSelectedComicId(event.target.value)}>
-            <option value="">Choose a comic</option>
-            {catalog.map((item) => (
-              <option key={item.comicId} value={item.comicId}>
-                {item.comicTitle} | #{item.comicIssue}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={18} />
-        </label>
+        <div className="rating-selector-column">
+          <label className="select-field">
+            <span>Comic</span>
+            <select value={selectedComicId} onChange={(event) => setSelectedComicId(event.target.value)}>
+              <option value="">Choose a comic</option>
+              {catalog.map((item) => (
+                <option key={item.comicId} value={item.comicId}>
+                  {item.comicTitle} | #{item.comicIssue}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={18} />
+          </label>
+
+          {selectedComic && (
+            <div className="selected-cover-preview">
+              {selectedComicHasCover ? (
+                <img
+                  src={catalogApi.imageUrl(selectedComic.comicId, selectedComic.comicImagePath)}
+                  alt={`${selectedComic.comicTitle} cover`}
+                  onError={() => setSelectedImageError(true)}
+                />
+              ) : (
+                <div className="cover-placeholder">
+                  <BookOpen size={28} />
+                  <span>No cover image</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="rating-form-area">
           {selectedComic ? (
             <>
               <div className="selected-comic">
                 <h3>{selectedComic.comicTitle}</h3>
-                <p>{selectedComic.comicIssue} · ID {selectedComic.comicId}</p>
+                <p>Issue #{selectedComic.comicIssue} · Comic ID: {selectedComic.comicId}</p>
               </div>
 
               <InteractiveStars
@@ -737,6 +804,7 @@ function AddRatingView({ catalog, prefilledComicId, onCancel, onCreated, onManag
                 value={alreadyRated ? selectedComic.ratingReview || "" : rating.ratingReview}
                 onChange={(ratingReview) => setRating({ ...rating, ratingReview })}
                 disabled={alreadyRated}
+                maxLength={2000}
               />
 
               {alreadyRated && <InlineError message="This comic already has a rating. Use Manage Rating to edit it." />}
@@ -831,9 +899,10 @@ function RatingModal({ item, onClose, onSaved }) {
         />
 
         <TextArea
-          label="Review"
+          label="Review (max 2000 characters)"
           value={rating.ratingReview}
           onChange={(ratingReview) => setRating({ ...rating, ratingReview })}
+          maxLength={2000}
         />
 
         <div className="button-row">
@@ -893,17 +962,24 @@ function ConfirmDialog({ title, message, confirmLabel, onCancel, onConfirm }) {
 }
 
 function RatingStars({ value, readOnly = false }) {
+  const score = Math.max(0, Math.min(10, Number(value) || 0));
+
   return (
-    <div className={`stars ${readOnly ? "readonly" : ""}`} aria-label={`${value || 0} out of 10`}>
+    <div className={`stars ${readOnly ? "readonly" : ""}`} aria-label={`${score} out of 10`}>
       {Array.from({ length: 10 }, (_, index) => {
-        const filled = index < value;
+        const starNumber = index + 1;
+        const filled = starNumber <= score;
+        const showScore = filled && starNumber === score;
+
         return (
-          <Star
-            key={index}
-            size={22}
-            fill={filled ? "currentColor" : "none"}
-            className={filled ? "filled" : ""}
-          />
+          <span key={starNumber} className="star-shell">
+            <Star
+              size={22}
+              fill={filled ? "currentColor" : "none"}
+              className={filled ? "filled" : ""}
+            />
+            {showScore && <span className="star-score">{score}</span>}
+          </span>
         );
       })}
     </div>
@@ -954,7 +1030,7 @@ function TextField({ label, value, onChange, required = false, inputMode = "text
   );
 }
 
-function TextArea({ label, value, onChange, disabled = false }) {
+function TextArea({ label, value, onChange, disabled = false, maxLength }) {
   return (
     <label className="text-field textarea-field">
       <span>{label}</span>
@@ -963,6 +1039,7 @@ function TextArea({ label, value, onChange, disabled = false }) {
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         rows={5}
+        maxLength={2000}
       />
     </label>
   );

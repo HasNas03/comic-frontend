@@ -27,6 +27,29 @@ async function request(path, options = {}) {
   return data;
 }
 
+async function upload(path, file, method) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    body: formData
+  });
+
+  const text = response.status === 204 ? "" : await response.text();
+  const data = text ? safeJson(text) : null;
+
+  if (!response.ok) {
+    const message = data?.message || data?.error || text || `Request failed with ${response.status}`;
+    const error = new Error(message);
+    error.status = response.status;
+    error.body = data || text;
+    throw error;
+  }
+
+  return data;
+}
+
 function safeJson(text) {
   try {
     return JSON.parse(text);
@@ -36,6 +59,11 @@ function safeJson(text) {
 }
 
 export const catalogApi = {
+  imageUrl(comicId, version = "") {
+    const cacheKey = version ? `?v=${version}` : "";
+    return `${API_BASE_URL}/catalog/comics/${comicId}/image${cacheKey}`;
+  },
+
   getCatalog() {
     return request("/catalog");
   },
@@ -60,6 +88,20 @@ export const catalogApi = {
 
   deleteComic(comicId) {
     return request(`/catalog/comics/${comicId}`, {
+      method: "DELETE"
+    });
+  },
+
+  addComicImage(comicId, file) {
+    return upload(`/catalog/comics/${comicId}/image`, file, "POST");
+  },
+
+  updateComicImage(comicId, file) {
+    return upload(`/catalog/comics/${comicId}/image`, file, "PUT");
+  },
+
+  deleteComicImage(comicId) {
+    return request(`/catalog/comics/${comicId}/image`, {
       method: "DELETE"
     });
   },

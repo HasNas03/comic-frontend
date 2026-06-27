@@ -325,11 +325,51 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
 
 .catalog-card {
   position: relative;
+  min-height: 148px;
   padding: 20px 68px 18px 20px;
+  display: grid;
+  grid-template-columns: 122px minmax(0, 1fr);
+  grid-template-areas:
+    "cover main"
+    "cover description"
+    "cover review";
+  column-gap: 22px;
+  row-gap: 10px;
   border-left: 6px solid #3b82f6;
 }
 
+.cover-thumb {
+  grid-area: cover;
+  width: 122px;
+  height: 183px;
+  min-height: 164px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(7, 7, 18, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.cover-thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #60a5fa;
+  background:
+    radial-gradient(circle at 50% 25%, rgba(56, 189, 248, 0.18), transparent 40%),
+    rgba(7, 20, 36, 0.82);
+}
+
 .card-main {
+  grid-area: main;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -342,8 +382,8 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
 .comic-id,
 .selected-comic p { color: var(--muted); font-size: 14px; }
 .comic-id { margin-bottom: 0; overflow-wrap: anywhere; }
-.description { margin: 14px 0 0; color: #dbeafe; }
-.review { margin: 14px 0 0; color: #93c5fd; font-style: italic; }
+.description { grid-area: description; margin: 0; color: #dbeafe; }
+.review { grid-area: review; margin: 0; color: #93c5fd; font-style: italic; }
 .card-menu { position: absolute; top: 16px; right: 16px; }
 
 .icon-button {
@@ -396,6 +436,93 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
 .form-panel.wide { max-width: 980px; }
 .form-panel.add-comic { max-width: 680px; /* slightly narrower so there's extra space on the right */ }
 .form-grid { display: grid; gap: 16px; }
+
+.add-comic-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 680px) 320px;
+  align-items: stretch;
+  gap: 24px;
+}
+
+.cover-upload-card {
+  min-height: 100%;
+  padding: 26px;
+  display: grid;
+  grid-template-rows: auto minmax(320px, 1fr) auto;
+  gap: 15px;
+  background: var(--panel-glass);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+}
+
+.cover-dropzone {
+  height: 370px;
+  width: 100%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 50% 25%, rgba(56, 189, 248, 0.18), transparent 42%),
+    rgba(7, 7, 18, 0.72);
+  border: 1px dashed rgba(96, 165, 250, 0.5);
+  border-radius: 14px;
+}
+
+.cover-dropzone:hover {
+  border-color: rgba(56, 189, 248, 0.86);
+  background:
+    radial-gradient(circle at 50% 25%, rgba(56, 189, 248, 0.26), transparent 42%),
+    rgba(7, 7, 18, 0.72);
+}
+
+.cover-dropzone img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.cover-dropzone span {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  padding: 22px;
+  text-align: center;
+}
+
+.cover-dropzone svg {
+  color: #60a5fa;
+}
+
+.cover-dropzone strong {
+  font-size: 18px;
+}
+
+.cover-dropzone small {
+  color: var(--muted);
+}
+
+.cover-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cover-dropzone.dragging {
+  border-color: rgba(56, 189, 248, 1);
+  background:
+    radial-gradient(circle at 50% 25%, rgba(56, 189, 248, 0.34), transparent 42%),
+    rgba(7, 7, 18, 0.84);
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+}
+
+.hidden-file-input {
+  display: none;
+}
 
 .text-field { display: grid; gap: 7px; }
 .text-field span,
@@ -490,8 +617,23 @@ h2 { font-size: 24px; line-height: 1.2; color: var(--text); }
   .github-link { margin-top: 0; }
   .main-panel { padding: 22px; }
   .card-main,
+  .add-comic-layout,
   .rating-layout,
   .summary-grid { grid-template-columns: 1fr; }
-  .catalog-card { padding-right: 58px; }
+  .catalog-card {
+    padding: 20px 58px 18px 20px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "cover"
+      "main"
+      "description"
+      "review";
+  }
+  .cover-thumb {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2 / 3;
+    min-height: unset;
+  }
   .stars { min-width: 0; flex-wrap: wrap; }
 }

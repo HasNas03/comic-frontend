@@ -106,6 +106,47 @@ export const catalogApi = {
     });
   },
 
+
+  getCollections() {
+    return request("/catalog/collections");
+  },
+
+  getCollection(collectionId) {
+    return request(`/catalog/collections/${collectionId}`);
+  },
+
+  addCollection(collection) {
+    return request("/catalog/collections", {
+      method: "POST",
+      body: JSON.stringify(collection)
+    });
+  },
+
+  updateCollection(collectionId, collection) {
+    return request(`/catalog/collections/${collectionId}`, {
+      method: "PUT",
+      body: JSON.stringify(collection)
+    });
+  },
+
+  deleteCollection(collectionId) {
+    return request(`/catalog/collections/${collectionId}`, {
+      method: "DELETE"
+    });
+  },
+
+  addComicToCollection(collectionId, comicId) {
+    return request(`/catalog/collections/${collectionId}/comics/${comicId}`, {
+      method: "POST"
+    });
+  },
+
+  removeComicFromCollection(collectionId, comicId) {
+    return request(`/catalog/collections/${collectionId}/comics/${comicId}`, {
+      method: "DELETE"
+    });
+  },
+
   addRating(rating) {
     return request("/catalog/ratings", {
       method: "POST",
